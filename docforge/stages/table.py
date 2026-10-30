@@ -3,10 +3,10 @@
 # 流程：线段连通分量 -> 一维聚类成网格 -> 边界覆盖率判定分隔 -> union-find 合并跨行列
 #       -> 单元格文本归属 -> HTML(rowspan/colspan) / Markdown。
 #
-# 面试点 1：为什么不用 PyMuPDF 自带 find_tables？——它不输出 rowspan/colspan 语义、
+# 为什么不用 PyMuPDF 自带 find_tables？——它不输出 rowspan/colspan 语义、
 #           无置信度、依赖内部启发式不可单测；这里自研 ~200 行纯函数换可控性，
 #           词提取仍复用 PyMuPDF（不自研分词，不在无价值处重复造轮子）。
-# 面试点 2：合并单元格用 union-find——局部"边界缺失"信息 -> 全局单元格区域，
+# 合并单元格用 union-find：局部"边界缺失"信息 -> 全局单元格区域，
 #           复杂度 O(RC x alpha)，且天然支持行列同时合并。
 
 from __future__ import annotations

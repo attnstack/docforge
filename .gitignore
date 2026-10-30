@@ -26,3 +26,4 @@ benchmark/data/human/*/pages/
 # IDE
 .idea/
 .vscode/
+技术方案.md

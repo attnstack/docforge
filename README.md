@@ -6,12 +6,12 @@
   <a href="#-benchmark-榜单"><img alt="benchmark" src="https://img.shields.io/badge/benchmark-中文解析评测-blue"></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-green"></a>
   <img alt="python" src="https://img.shields.io/badge/python-3.11%2B-informational">
-  <a href="https://github.com/OWNER/docforge/actions"><img alt="ci" src="https://img.shields.io/badge/CI-GitHub%20Actions-passing-brightgreen"></a>
+  <a href="https://github.com/attnstack/docforge/actions"><img alt="ci" src="https://img.shields.io/badge/CI-GitHub%20Actions-passing-brightgreen"></a>
 </p>
 
-<!-- 首屏 demo 位：放一张「扫描/复杂表格 PDF → 还原结果」前后对比 GIF。
-     建议内容：examples 里的财报表格 PDF 左侧原图、右侧渲染出的 Markdown/HTML 表格，
-     用 vhs 或 ScreenToGif 录制 10~15 秒。路径约定：docs/assets/demo.gif -->
+<p align="center">
+  <img src="docs/assets/demo.png" alt="docforge：政府公文 PDF → Markdown 与跨行列表格结构还原" width="820">
+</p>
 
 ## 为什么是 docforge
 
@@ -78,7 +78,7 @@ flowchart LR
     K --> L[结果 JSON -> 榜单页]
 ```
 
-核心算法（值得读源码的部分，均带面试点注释）：
+核心算法（值得读源码的部分）：
 
 - **阅读顺序**：[docforge/stages/reading_order.py](docforge/stages/reading_order.py) —— 通栏块先剥离再分栏；行带容差取 0.5×块高中位数；
 - **表格结构**：[docforge/stages/table.py](docforge/stages/table.py) —— 局部边界缺失经 union-find 汇成跨行列区域；L 形合并的降级策略；
@@ -115,7 +115,7 @@ flowchart LR
 > 复现：`docforge gen-seed && docforge bench --engine docforge --engine pymupdf4llm --engine markitdown && docforge leaderboard --results results --out leaderboard/index.html`（每样本耗时与逐项分数见 `results/report.md`；测试环境：Windows 11 / Python 3.12 / CPU）
 > ⚠️ 合成集数字只证明"评测链路工作正常 + 引擎在构造样例上正确"，**不构成对真实文档的性能主张**。
 >
-> 两个值得注意的诚实信号：
+> 对对比结果的两点说明：
 > - **PyMuPDF4LLM 在合成集表格 TEDS 上与我们打平**（1.0000）：它能从 PDF 单元格拓扑恢复结构，只是不输出 rowspan/colspan 属性——在真实集的复杂表格上它掉到 0.2044，差距来自跨行列合并的真实复杂度；
 > - markitdown 在双栏样本上文本分 0.32（逐行左右交错），这正是方案定位所针对的痛点，实测坐实。
 
@@ -129,7 +129,7 @@ flowchart LR
 ## 快速上手（开发者）
 
 ```bash
-git clone https://github.com/OWNER/docforge && cd docforge
+git clone https://github.com/attnstack/docforge && cd docforge
 python -m venv .venv && source .venv/Scripts/activate   # Windows Git Bash
 pip install -e ".[dev,bench]"
 pytest            # 全部单测 + 集成测试

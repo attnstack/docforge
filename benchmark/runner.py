@@ -1,7 +1,7 @@
 # 职责：评测执行器。数据集 -> 引擎解析 -> 统一提交格式 -> 四指标打分 -> 结果 JSON + 报告。
 #
-# 面试点：所有引擎（含基线）经过同一个 blocks_to_submission_sample 适配，
-# 喂给指标的 plain text 来源可审计——这是"对比公平性"的工程保证。
+# 对比公平性：所有引擎（含基线）经过同一个 blocks_to_submission_sample 适配，
+# 喂给指标的 plain text 来源可审计。
 
 from __future__ import annotations
 

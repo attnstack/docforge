@@ -1,6 +1,6 @@
 # 职责：纯 Markdown 输出的基线引擎适配（markitdown / pymupdf4llm）。
 #
-# 面试点：markdown -> 块 的剥离规则全部显式写在 markdown_to_blocks——
+# markdown -> 块 的剥离规则全部显式写在 markdown_to_blocks——
 # 基线对比的公平性取决于「喂给指标的 plain text 怎么来的」，规则必须可审计：
 # 表格行不进文本指标（由 TEDS 单独评）、#/**/_/` 等语法标记剥掉、链接只留锚文本。
 

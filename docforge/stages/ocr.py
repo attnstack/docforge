@@ -1,6 +1,6 @@
 # 职责：OCR 适配层（可选依赖）。扫描页 -> 渲染位图 -> PaddleOCR 行级结果 -> Block。
 #
-# 面试点：适配器 + 运行时特性探测（capability probe）。PaddleOCR 3.x 把 2.x 的
+# 适配器 + 运行时特性探测（capability probe）。PaddleOCR 3.x 把 2.x 的
 # .ocr() 换成 .predict()、返回结构也变了；靠 hasattr 探测而不是固定 pin 一个大版本，
 # 上游破坏性变更的影响被隔离在这一个文件里。
 
