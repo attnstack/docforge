@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# 虚拟环境
+.venv/
+venv/
+
+# 运行产物
+badcases/
+results/
+leaderboard/
+probe*.pdf
+.tmp/
+*.log
+examples/demo.json
+
+# 标注工作区中的临时渲染页（保留 gt/pred json）
+benchmark/data/human/*/pages/
+
+# IDE
+.idea/
+.vscode/

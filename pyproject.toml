@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "docforge"
+version = "0.1.0"
+description = "中文文档解析引擎与公开 Benchmark：多栏/复杂表格 PDF -> LLM-ready Markdown 与带 bbox 的 JSON"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "docforge contributors" }]
+keywords = ["pdf", "ocr", "document-parsing", "benchmark", "chinese", "rag", "table-structure", "reading-order"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Text Processing :: Markup :: Markdown",
+]
+
+# 核心依赖刻意保持最小：数字版 PDF 全链路零重依赖，扫描件 OCR 走可选 extra。
+dependencies = [
+  "pymupdf>=1.24",
+  "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+# 扫描件 OCR：PaddleOCR 2.x/3.x 双代 API 适配在 docforge/stages/ocr.py，运行时特性探测。
+# pin <3.0：paddlepaddle 3.x 的 onednn 推理存在上游 bug（实测 PIR 属性转换未实现），
+# 3.x 适配代码保留，待上游修复后放开。
+ocr = ["paddleocr>=2.7,<3.0", "paddlepaddle>=2.6,<3.0"]
+# 基线引擎（benchmark 对比用）。markitdown 的 PDF 支持在其 [pdf] extra 里
+bench = ["markitdown[pdf]>=0.1.1", "pymupdf4llm>=0.0.17"]
+server = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+docforge = "docforge.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["docforge", "benchmark"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

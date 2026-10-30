@@ -1,0 +1,5 @@
+# 统一换行符：仓库内一律 LF，避免跨平台协作的 CRLF 噪声
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary

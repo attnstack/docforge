@@ -1,0 +1,17 @@
+{
+  "engine": "ground-truth",
+  "dataset": "docforge-zh-synthetic-v0.1",
+  "samples": [
+    {
+      "id": "table-span-002",
+      "text_blocks": [
+        "下表为合并利润表示例，包含跨行与跨列合并单元格。",
+        "表1：合并利润表（单位：万元）"
+      ],
+      "tables": [
+        "<table><tr><td>地区</td><td>第一季度</td><td>第二季度</td></tr><tr><td>华东</td><td>3200.00</td><td>3400.00</td></tr><tr><td>华南</td><td>2800.00</td><td>3100.00</td></tr><tr><td>备注</td><td colspan=\"2\">含税口径</td></tr></table>"
+      ],
+      "headings": []
+    }
+  ]
+}

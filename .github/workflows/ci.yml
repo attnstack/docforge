@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      # OCR 依赖（paddle）不在 CI 安装：数百 MB 且非核心链路；扫描路径由本地测试覆盖
+      - name: Install
+        run: pip install -e ".[dev,bench]"
+      - name: Lint
+        run: ruff check docforge benchmark
+      - name: Seed dataset
+        run: docforge gen-seed
+      - name: Tests
+        run: pytest -q
+      - name: Benchmark smoke (deterministic gates)
+        run: |
+          docforge bench --engine docforge --engine pymupdf4llm --out results
+          python - <<'PY'
+          import json
+          for name, floor in (("docforge", 0.95), ("pymupdf4llm", 0.75)):
+              agg = json.load(open(f"results/{name}.json", encoding="utf-8"))["aggregate"]
+              overall = agg["overall"]
+              assert overall is not None and overall >= floor, f"{name} overall={overall} < {floor}"
+              print(f"{name}: overall={overall:.4f} (floor {floor})")
+          PY
+
+  leaderboard-page:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[bench]"
+      - run: docforge gen-seed && docforge bench --engine docforge --engine pymupdf4llm --engine markitdown --out results
+      - run: docforge leaderboard --results results --out leaderboard/index.html
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./leaderboard

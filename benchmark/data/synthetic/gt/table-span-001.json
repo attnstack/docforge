@@ -1,0 +1,17 @@
+{
+  "engine": "ground-truth",
+  "dataset": "docforge-zh-synthetic-v0.1",
+  "samples": [
+    {
+      "id": "table-span-001",
+      "text_blocks": [
+        "下表为合并利润表示例，包含跨行与跨列合并单元格。",
+        "表1：合并利润表（单位：万元）"
+      ],
+      "tables": [
+        "<table><tr><td>项目</td><td colspan=\"2\">2024年度</td></tr><tr><td rowspan=\"2\">营业收入</td><td>1000.00</td><td>1200.00</td></tr><tr><td>1100.00</td><td>1300.00</td></tr><tr><td>净利润</td><td>100.00</td><td>150.00</td></tr></table>"
+      ],
+      "headings": []
+    }
+  ]
+}

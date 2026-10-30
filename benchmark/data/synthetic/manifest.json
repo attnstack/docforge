@@ -1,0 +1,67 @@
+{
+  "name": "docforge-zh-synthetic-v0.1",
+  "synthetic": true,
+  "description": "程序化生成的种子集：GT 精确已知，用于评测链路自证与回归。非真实文档分布。",
+  "samples": [
+    {
+      "id": "single-001",
+      "type": "general",
+      "input": "inputs/single-001.pdf",
+      "gt": "gt/single-001.json"
+    },
+    {
+      "id": "headings-001",
+      "type": "general",
+      "input": "inputs/headings-001.pdf",
+      "gt": "gt/headings-001.json"
+    },
+    {
+      "id": "twocol-001",
+      "type": "two_col",
+      "input": "inputs/twocol-001.pdf",
+      "gt": "gt/twocol-001.json"
+    },
+    {
+      "id": "twocol-002",
+      "type": "two_col",
+      "input": "inputs/twocol-002.pdf",
+      "gt": "gt/twocol-002.json"
+    },
+    {
+      "id": "table-plain-001",
+      "type": "table",
+      "input": "inputs/table-plain-001.pdf",
+      "gt": "gt/table-plain-001.json"
+    },
+    {
+      "id": "table-span-001",
+      "type": "table",
+      "input": "inputs/table-span-001.pdf",
+      "gt": "gt/table-span-001.json"
+    },
+    {
+      "id": "table-span-002",
+      "type": "table",
+      "input": "inputs/table-span-002.pdf",
+      "gt": "gt/table-span-002.json"
+    },
+    {
+      "id": "header-footer-001",
+      "type": "header_footer",
+      "input": "inputs/header-footer-001.pdf",
+      "gt": "gt/header-footer-001.json"
+    },
+    {
+      "id": "longtext-001",
+      "type": "general",
+      "input": "inputs/longtext-001.pdf",
+      "gt": "gt/longtext-001.json"
+    },
+    {
+      "id": "mixed-001",
+      "type": "mixed",
+      "input": "inputs/mixed-001.pdf",
+      "gt": "gt/mixed-001.json"
+    }
+  ]
+}
