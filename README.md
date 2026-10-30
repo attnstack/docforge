@@ -22,8 +22,8 @@
 ## 30 秒 Quick Start
 
 ```bash
-# 1) 安装（核心依赖极轻：PyMuPDF + jsonschema）
-pip install -e .
+# 1) 安装（已发布 PyPI；核心依赖极轻：PyMuPDF + jsonschema）
+pip install docforge-zh
 # 2) 生成合成种子数据集（程序化 PDF，GT 精确已知，用于打通评测链路）
 docforge gen-seed
 # 3) 解析一个多栏+表格的 PDF
@@ -32,6 +32,8 @@ docforge convert benchmark/data/synthetic/inputs/mixed-001.pdf -o out.md --forma
 docforge bench --engine docforge --engine pymupdf4llm
 docforge leaderboard --results results/ --out leaderboard/index.html
 ```
+
+从源码安装：`git clone https://github.com/attnstack/docforge && cd docforge && pip install -e .`
 
 扫描件 OCR 为可选能力：`pip install "docforge[ocr]"`（拉起 PaddleOCR，首次运行自动下载模型）。
 
