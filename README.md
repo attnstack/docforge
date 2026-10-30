@@ -90,7 +90,7 @@ flowchart LR
 
 ### ① 真实公文集 `docforge-zh-real-v0.1-rc`（7 样本：5 数字页 + 2 仿真扫描页）
 
-来源：政府公开公文（依《著作权法》第五条可再分发，来源 URL 见 manifest）。GT 文本取自 PDF 文字层并逐块与原文程序化核对，结构（标题层级/表格跨行列）由标注员读渲染图核定；**单标注流程，双人标注与一致性检验进行中，故为 rc 版**。
+来源：政府公开公文（依《著作权法》第五条可再分发，来源 URL 见 manifest）。GT 文本取自 PDF 文字层并逐块与原文程序化核对，结构（标题层级/表格跨行列）由标注员读渲染图核定；**已完成第二轮独立复核（仅依据渲染图重标），文本一致率 1.0000、结构零分歧（[AGREEMENT.md](benchmark/data/real-v0.1-rc/AGREEMENT.md)）；单标注员两轮，升 v0.1 需第二位标注员**。
 
 | 引擎 | 文本 1−CER ↑ | 阅读顺序 ↑ | 表格 TEDS ↑ | 标题树 ↑ | 综合 ↑ |
 |---|---|---|---|---|---|
@@ -140,7 +140,7 @@ ruff check docforge benchmark
 
 - **无框线表格不支持**：v0.1 只承诺有框线表格；无框线需要检测模型（PP-Structure/SLANet），在 v0.2 路线图上；
 - **公式只检测不转换**：LaTeX 识别（pix2tex 类）对中文混排准确率未实测，v0.1 不启用，避免给不可信数字；
-- **OCR：Windows 原生已验证，Linux/WSL2 + AMD 组合有上游问题**：实测 paddlepaddle 3.x 的 onednn 推理有上游 bug（PIR 属性转换未实现）；pin 的 2.6 稳定组合在 Windows 原生（含 AMD CPU）完整跑通扫描链路（真实扫描公文页文本 0.9931），但在 WSL2/Docker Linux wheel 上遇 SIGILL（疑似其 oneDNN JIT 在 AMD 的问题）。`docforge[ocr]` 因此 pin `paddleocr 2.x + paddlepaddle 2.6`，Linux 用户建议等待上游修复或换 Windows/Intel 环境；
+- **OCR：Windows 原生已验证；WSL2/Docker + AMD 组合 `import paddleocr` 即崩溃**：实测 paddlepaddle 3.x 有 onednn 推理上游 bug（PIR 属性转换未实现）；pin 的 2.6 稳定组合在 Windows 原生（含 AMD CPU）完整跑通扫描链路（真实扫描公文页文本 0.9931），但在 WSL2/Docker 的 Linux wheel 上**导入 paddleocr 即 SIGILL**（其原生库初始化在 AMD Zen 上的问题，已用 import 追踪定位到导入层）。`docforge[ocr]` 因此 pin 2.x；docforge 的懒加载设计保证数字版解析完全不触碰 paddle（数字路径在容器内正常），扫描需求在 WSL2+AMD 下请用 Windows 原生或 Intel 环境；
 - **扫描页表格结构与标题不支持**：扫描页无矢量线（表格）无字号元数据（标题），v0.1 如实降级并在评测中计入负分，v0.2 用 PP-Structure 解决；
 - **真实集规模小、单标注**：7 样本（5 数字 + 2 扫描仿真），单标注流程，双人标注与 Kappa/一致率报告在补；扩展到 50–100 页的标注协议见 docs/benchmark.md；
 - **标题判定依赖公文格式先验**：黑体/楷体字体名 + 编号模式（一、/（一）/——）在公文上实测有效，对非公文中文版式的泛化未验证；
