@@ -1,0 +1,28 @@
+{
+  "engine": "ground-truth",
+  "dataset": "docforge-zh-real-v0.1-rc",
+  "samples": [
+    {
+      "id": "real-table-002",
+      "text_blocks": [
+        "附表3",
+        "XXX（单位）第X 季度工作目标完成情况",
+        "单位：",
+        "主要负责人（签字）："
+      ],
+      "tables": [
+        "<table><tr><td>序号</td><td>责任事项</td><td>落实情况</td><td>工作进度（已完成、序时推进、滞后序时）</td></tr><tr><td>1</td><td></td><td></td><td></td></tr><tr><td>2</td><td></td><td></td><td></td></tr><tr><td>3</td><td></td><td></td><td></td></tr><tr><td>……</td><td></td><td></td><td></td></tr><tr><td colspan=\"4\">备注：为便于统计，责任事项序号请按区《政府工作报告》目标任务责任分解方案确定的序号排序。</td></tr></table>"
+      ],
+      "headings": [
+        [
+          2,
+          "附表3"
+        ],
+        [
+          1,
+          "XXX（单位）第X 季度工作目标完成情况"
+        ]
+      ]
+    }
+  ]
+}

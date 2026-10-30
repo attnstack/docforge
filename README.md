@@ -49,7 +49,7 @@ docker run --rm -v "$PWD:/data" docforge convert /data/扫描件.pdf -o /data/ou
 | 数字版 PDF → Markdown / JSON | ✅ v0.1 | 文字层直提取，毫秒级；标题层级 + 跨页段落续接 |
 | 双栏/多栏阅读顺序还原 | ✅ v0.1 | 通栏分段 → x 投影分栏 → 行带聚类，纯几何可单测 |
 | 有框线表格结构还原 | ✅ v0.1 | 线段网格聚类 + union-find 合并，输出 rowspan/colspan HTML |
-| 扫描件 OCR | 🔌 可选 | `docforge[ocr]`（PaddleOCR 2.x/3.x 双代适配）；扫描页表格结构 v0.2 |
+| 扫描件 OCR | 🔌 可选 | `docforge[ocr]`（PaddleOCR 2.x/3.x 双代适配），Windows 原生实测：扫描公文页文本 0.9931；扫描页表格结构 v0.2 |
 | 公式 → LaTeX | ⏳ v0.2 | 指标已实现并入库，转换链路未启用（诚实声明，见「不足」） |
 | Benchmark（4 指标 + schema 校验 + 榜单） | ✅ v0.1 | CER / TEDS / 阅读顺序 / 标题树，全部确定性指标，无 LLM judge |
 | 人工标注工作流 | 🚧 进行中 | 预标注 + 双人一致性工具（`docforge annotate` / `docforge bench-agree`） |
@@ -86,19 +86,37 @@ flowchart LR
 
 ## Benchmark 榜单
 
-数据集版本：`docforge-zh-synthetic-v0.1`（合成种子集，**不是真实分布**，用于评测链路自证与回归；人工标注集 v0.1 标注中，见 [docs/benchmark.md](docs/benchmark.md)）。
+两个数据集，口径均为确定性四指标（详见 [docs/benchmark.md](docs/benchmark.md)）：
 
-| 引擎 | 文本 1−CER ↑ | 阅读顺序对准确率 ↑ | 表格 TEDS ↑ | 标题树相似度 ↑ | 综合 ↑ |
+### ① 真实公文集 `docforge-zh-real-v0.1-rc`（7 样本：5 数字页 + 2 仿真扫描页）
+
+来源：政府公开公文（依《著作权法》第五条可再分发，来源 URL 见 manifest）。GT 文本取自 PDF 文字层并逐块与原文程序化核对，结构（标题层级/表格跨行列）由标注员读渲染图核定；**单标注流程，双人标注与一致性检验进行中，故为 rc 版**。
+
+| 引擎 | 文本 1−CER ↑ | 阅读顺序 ↑ | 表格 TEDS ↑ | 标题树 ↑ | 综合 ↑ |
+|---|---|---|---|---|---|
+| docforge 0.1.0（含 OCR） | 0.8760 | 0.9762 | 0.6667 | 0.8095 | **0.8321** |
+| PyMuPDF4LLM | 0.5331 | 1.0000 | 0.2044 | 0.5952 | 0.5832 |
+| markitdown | 0.3576 | 0.9667 | 0.0000 | 0.3333 | 0.4144 |
+
+> 复现：`docforge bench --engine docforge --engine pymupdf4llm --engine markitdown --dataset benchmark/data/real-v0.1-rc --out results-real`（docforge 需 `pip install "docforge[ocr]"`）
+> 诚实解读（重要）：
+> - 数字页（5 样本）docforge 全指标 1.0：文本指标对"文字层提取类"引擎区分度低（GT 与引擎同源于文字层，1.0 是预期而非奇迹），区分度在结构——真实公文的跨行合并表格（rowspan=4×3 组、colspan 备注行）与"黑体/楷体同字号标题"，两个基线均无法还原；
+> - 扫描页（2 样本）：扫描公文页 OCR 文本 0.9931、阅读顺序 1.0（真实识别质量，非文字层同源）；扫描表格页 text 0.139 / table 0.0 是**已声明的 v0.1 边界**——扫描页无矢量线，表格结构不可还原，退化文本混入正文也被 GT 判罚，两项负分如实计入总分；
+> - docforge 真实集数字基于 7 个样本，样本量小，不外推为整体性能主张；标题判定依赖公文格式先验（黑体/楷体/编号模式），对非公文版式的泛化未验证。
+
+### ② 合成种子集 `docforge-zh-synthetic-v0.1`（10 样本，评测链路自证与回归）
+
+| 引擎 | 文本 1−CER ↑ | 阅读顺序 ↑ | 表格 TEDS ↑ | 标题树 ↑ | 综合 ↑ |
 |---|---|---|---|---|---|
 | docforge 0.1.0 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | **1.0000** |
 | PyMuPDF4LLM | 0.9773 | 1.0000 | 1.0000 | 0.6296 | 0.9017 |
 | markitdown | 0.8389 | 0.9524 | 0.9726 | 0.4445 | 0.8021 |
 
-> 复现命令：`docforge gen-seed && docforge bench --engine docforge --engine pymupdf4llm --engine markitdown && docforge leaderboard --results results --out leaderboard/index.html`（每样本耗时与逐项分数见 `results/report.md`；测试环境：Windows 11 / Python 3.12 / CPU）。
+> 复现：`docforge gen-seed && docforge bench --engine docforge --engine pymupdf4llm --engine markitdown && docforge leaderboard --results results --out leaderboard/index.html`（每样本耗时与逐项分数见 `results/report.md`；测试环境：Windows 11 / Python 3.12 / CPU）
 > ⚠️ 合成集数字只证明"评测链路工作正常 + 引擎在构造样例上正确"，**不构成对真实文档的性能主张**。
 >
 > 两个值得注意的诚实信号：
-> - **PyMuPDF4LLM 在表格 TEDS 上与我们打平**（1.0000）：它能从 PDF 单元格拓扑恢复结构，只是不输出 rowspan/colspan 属性——对有框线表格，我们的差异化在扫描件支持、置信度与 HTML 语义，而不是"有框线数字表格"本身；
+> - **PyMuPDF4LLM 在合成集表格 TEDS 上与我们打平**（1.0000）：它能从 PDF 单元格拓扑恢复结构，只是不输出 rowspan/colspan 属性——在真实集的复杂表格上它掉到 0.2044，差距来自跨行列合并的真实复杂度；
 > - markitdown 在双栏样本上文本分 0.32（逐行左右交错），这正是方案定位所针对的痛点，实测坐实。
 
 ## Benchmark 设计要点（为什么可信）
@@ -121,11 +139,12 @@ ruff check docforge benchmark
 ## 已知不足（诚实清单）
 
 - **无框线表格不支持**：v0.1 只承诺有框线表格；无框线需要检测模型（PP-Structure/SLANet），在 v0.2 路线图上；
-- **扫描页表格结构不支持**：扫描页没有矢量线段，几何法失效；需要图像形态学或表格识别模型，v0.2；
 - **公式只检测不转换**：LaTeX 识别（pix2tex 类）对中文混排准确率未实测，v0.1 不启用，避免给不可信数字；
-- **OCR 依赖 pin 在 paddle 2.x 稳定组合，推理在本机开发环境未跑通**：实测 paddlepaddle 3.x 的 onednn 推理有上游 bug（PIR 属性转换未实现，已复现并记录）；pin 到 2.6 稳定组合后，在 AMD Zen3 + WSL2/Docker 环境又遇 SIGILL（疑似其内置 oneDNN JIT 在 AMD 的问题）。适配层代码（2.x/3.x 双代探测）已就绪并经容器验证可加载模型，模型推理验证需要在标准 Intel 云环境跑一次——这是发布 v0.1 前的遗留验证项。
-- **合成种子集 ≠ 真实基准**：人工标注的 100 页真实集在标注流程中；
-- **标题判定是字号启发式**：对"小标题大正文"的反转版式会漏；版面检测模型在 v0.2；
+- **OCR：Windows 原生已验证，Linux/WSL2 + AMD 组合有上游问题**：实测 paddlepaddle 3.x 的 onednn 推理有上游 bug（PIR 属性转换未实现）；pin 的 2.6 稳定组合在 Windows 原生（含 AMD CPU）完整跑通扫描链路（真实扫描公文页文本 0.9931），但在 WSL2/Docker Linux wheel 上遇 SIGILL（疑似其 oneDNN JIT 在 AMD 的问题）。`docforge[ocr]` 因此 pin `paddleocr 2.x + paddlepaddle 2.6`，Linux 用户建议等待上游修复或换 Windows/Intel 环境；
+- **扫描页表格结构与标题不支持**：扫描页无矢量线（表格）无字号元数据（标题），v0.1 如实降级并在评测中计入负分，v0.2 用 PP-Structure 解决；
+- **真实集规模小、单标注**：7 样本（5 数字 + 2 扫描仿真），单标注流程，双人标注与 Kappa/一致率报告在补；扩展到 50–100 页的标注协议见 docs/benchmark.md；
+- **标题判定依赖公文格式先验**：黑体/楷体字体名 + 编号模式（一、/（一）/——）在公文上实测有效，对非公文中文版式的泛化未验证；
+- **段落回流是启发式**：依赖首行缩进/字体连续信号，对无缩进的西文行级拆分场景可能欠合并；
 - **PaddleOCR 模型文件不进镜像/仓库**：首次运行需联网下载（约几百 MB）。
 
 ## Contributing

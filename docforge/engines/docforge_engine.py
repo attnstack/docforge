@@ -15,10 +15,10 @@ class DocforgeEngine(BaseEngine):
     supports_scanned = True
 
     def parse(self, path: Path, cfg: PipelineConfig, image_out_dir: Path | None = None) -> EngineResult:
-        # OCR 引擎未安装时 parse_document 只会在遇到扫描页时报错——数字版文档无需 OCR 依赖
+        # OCR 引擎未安装时 parse_document 只会在遇到扫描页时报错——数字版文档无需 OCR 依赖；
+        # 不做 eager warmup：纯数字文档不应付出模型加载成本（模型在首次识别时才加载）
         try:
             engine = ocr.get_ocr()
-            engine.warmup()
         except ocr.OcrUnavailableError:
             engine = None
         doc = pipeline.parse_document(path, cfg, ocr_engine=engine, image_out_dir=image_out_dir)

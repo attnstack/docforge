@@ -72,6 +72,10 @@ def parse_document(
         removed_hf = layout.remove_headers_footers(pages, cfg.layout)
         stage_ms["header_footer"] = (time.perf_counter() - t_hf) * 1000
 
+        t_reflow = time.perf_counter()
+        layout.reflow_paragraphs(pages)
+        stage_ms["reflow"] = (time.perf_counter() - t_reflow) * 1000
+
         t_head = time.perf_counter()
         layout.detect_headings(pages, cfg.heading)
         stage_ms["headings"] = (time.perf_counter() - t_head) * 1000
@@ -130,7 +134,7 @@ def _blocks_from_text(raw: extract.PageRaw, pno: int) -> list[Block]:
                 bbox=rb.bbox,
                 type=BlockType.TEXT,
                 text="\n".join(lines_text),
-                meta={"font_size": rb.max_font_size, "bold": rb.bold, "source": "text-layer"},
+                meta={"font_size": rb.max_font_size, "bold": rb.bold, "font": rb.font, "source": "text-layer"},
             )
         )
     for j, img_bbox in enumerate(raw.image_bboxes):

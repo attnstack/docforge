@@ -1,0 +1,62 @@
+{
+  "name": "docforge-zh-real-v0.1-rc",
+  "synthetic": false,
+  "annotation": "单标注 v0.1-rc：GT 文本取自 PDF 文字层并逐块与原文核对，结构（标题层级/表格跨行列/阅读顺序）由标注员读页面渲染图核定；双人独立标注与一致性检验进行中",
+  "notes": "真实政府公文（依《著作权法》第五条可再分发）。数字页文字来自文字层（文本指标对文字层引擎区分度低，结构指标是主要区分维度）；gov_scan 为整页位图仿真扫描件（内容与数字版一致，GT 可精确继承），文本指标在该子集上衡量 OCR 质量",
+  "sources": [
+    {
+      "doc": "西乌珠穆沁旗人民政府 2024 年政府工作报告",
+      "url": "https://www.xwq.gov.cn/xwzmqq/zwgk/zfgzbg/2024012911271246627/2024012911262617370.pdf",
+      "license_note": "国家机关公文，依《中华人民共和国著作权法》第五条不适用著作权保护"
+    },
+    {
+      "doc": "武汉市江夏区 2024 年区《政府工作报告》主要目标任务责任分解方案",
+      "url": "http://www.jiangxia.gov.cn/xxgk_22343/zc/qtwj/qt_22356/202403/P020240329436367515351.pdf",
+      "license_note": "同上"
+    }
+  ],
+  "samples": [
+    {
+      "id": "real-gov-001",
+      "type": "gov_text",
+      "input": "inputs/xwq-p1.pdf",
+      "gt": "gt/real-gov-001.json"
+    },
+    {
+      "id": "real-gov-002",
+      "type": "gov_text",
+      "input": "inputs/xwq-p11.pdf",
+      "gt": "gt/real-gov-002.json"
+    },
+    {
+      "id": "real-gov-003",
+      "type": "gov_text",
+      "input": "inputs/jx-p1.pdf",
+      "gt": "gt/real-gov-003.json"
+    },
+    {
+      "id": "real-table-001",
+      "type": "gov_table",
+      "input": "inputs/jx-p24.pdf",
+      "gt": "gt/real-table-001.json"
+    },
+    {
+      "id": "real-table-002",
+      "type": "gov_table",
+      "input": "inputs/jx-p26.pdf",
+      "gt": "gt/real-table-002.json"
+    },
+    {
+      "id": "real-scan-001",
+      "type": "gov_scan",
+      "input": "inputs/xwq-p1-scan.pdf",
+      "gt": "gt/real-scan-001.json"
+    },
+    {
+      "id": "real-scan-002",
+      "type": "gov_scan",
+      "input": "inputs/jx-p24-scan.pdf",
+      "gt": "gt/real-scan-002.json"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "engine": "ground-truth",
+  "dataset": "docforge-zh-real-v0.1-rc",
+  "samples": [
+    {
+      "id": "real-table-001",
+      "text_blocks": [
+        "附表1",
+        "XXX（单位）区《政府工作报告》办理方案",
+        "单位：",
+        "主要负责人（签字）："
+      ],
+      "tables": [
+        "<table><tr><td>序号</td><td>责任事项</td><td>工作措施</td><td>具体项目</td><td>完成时间（按月）</td></tr><tr><td rowspan=\"4\">1</td><td rowspan=\"4\"></td><td>1.……</td><td></td><td></td></tr><tr><td>2.……</td><td></td><td></td></tr><tr><td>3.……</td><td></td><td></td></tr><tr><td>4.……</td><td></td><td></td></tr><tr><td rowspan=\"4\">2</td><td rowspan=\"4\"></td><td>1.……</td><td></td><td></td></tr><tr><td>2.……</td><td></td><td></td></tr><tr><td>3.……</td><td></td><td></td></tr><tr><td>4.……</td><td></td><td></td></tr><tr><td rowspan=\"4\">3</td><td rowspan=\"4\"></td><td>1.……</td><td></td><td></td></tr><tr><td>2.……</td><td></td><td></td></tr><tr><td>3.……</td><td></td><td></td></tr><tr><td>4.……</td><td></td><td></td></tr></table>"
+      ],
+      "headings": [
+        [
+          2,
+          "附表1"
+        ],
+        [
+          1,
+          "XXX（单位）区《政府工作报告》办理方案"
+        ]
+      ]
+    }
+  ]
+}

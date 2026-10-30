@@ -29,6 +29,7 @@ class RawBlock:
     lines: list[RawLine]
     max_font_size: float
     bold: bool
+    font: str = ""  # 最大字号 span 的字体名（公文标题常用黑体/楷体字体名模拟加粗）
 
 
 @dataclass
@@ -93,6 +94,7 @@ def extract_page(page: fitz.Page) -> PageRaw:
         lines: list[RawLine] = []
         max_size = 0.0
         any_bold = False
+        title_font = ""
         for line in blk.get("lines", []):
             spans: list[RawSpan] = []
             for span in line.get("spans", []):
@@ -102,13 +104,21 @@ def extract_page(page: fitz.Page) -> PageRaw:
                 raw.char_count += len(text.strip())
                 bold = bool(span.get("flags", 0) & 16)  # bit4 = bold
                 spans.append(RawSpan(text=text, size=span.get("size", 0.0), bold=bold, bbox=BBox(*span["bbox"])))
-                max_size = max(max_size, span.get("size", 0.0))
+                if span.get("size", 0.0) >= max_size:
+                    max_size = span.get("size", 0.0)
+                    title_font = span.get("font", "")
                 any_bold = any_bold or bold
             if spans:
                 lines.append(RawLine(bbox=_union_bbox([s.bbox for s in spans]), spans=spans))
         if lines:
             raw.text_blocks.append(
-                RawBlock(bbox=_union_bbox([ln.bbox for ln in lines]), lines=lines, max_font_size=max_size, bold=any_bold)
+                RawBlock(
+                    bbox=_union_bbox([ln.bbox for ln in lines]),
+                    lines=lines,
+                    max_font_size=max_size,
+                    bold=any_bold,
+                    font=title_font,
+                )
             )
 
     raw.words = [Word(x0, y0, x1, y1, t) for x0, y0, x1, y1, t, *_ in page.get_text("words")]

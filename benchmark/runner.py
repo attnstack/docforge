@@ -18,7 +18,7 @@ from benchmark.metrics.order_and_text import pairwise_order_accuracy, text_simil
 from benchmark.metrics.teds import teds_for_tables
 from benchmark.schema import validate_submission
 from docforge.config import PipelineConfig
-from docforge.errors import DatasetError
+from docforge.errors import DatasetError, DocforgeError
 from docforge.models import Block, BlockType
 from docforge.stages.export import merge_continuations
 
@@ -40,6 +40,8 @@ class Dataset:
     name: str
     synthetic: bool
     samples: list[SampleSpec]
+    notes: str = ""
+    annotation: str = ""
 
 
 def load_dataset(dataset_dir: Path) -> Dataset:
@@ -58,7 +60,13 @@ def load_dataset(dataset_dir: Path) -> Dataset:
         samples.append(SampleSpec(id=s["id"], doc_type=s.get("type", "unknown"), input_path=input_path, gt_path=gt_path))
     if not samples:
         raise DatasetError(f"数据集 {manifest_path} 中没有样本")
-    return Dataset(name=manifest.get("name", dataset_dir.name), synthetic=manifest.get("synthetic", False), samples=samples)
+    return Dataset(
+        name=manifest.get("name", dataset_dir.name),
+        synthetic=manifest.get("synthetic", False),
+        samples=samples,
+        notes=manifest.get("notes", ""),
+        annotation=manifest.get("annotation", ""),
+    )
 
 
 def blocks_to_submission_sample(sample_id: str, blocks: list[Block]) -> dict[str, Any]:
@@ -112,7 +120,21 @@ def run_engine(engine_name: str, dataset: Dataset, cfg: PipelineConfig, limit: i
     per_sample: list[dict[str, Any]] = []
     for spec in dataset.samples[:limit] if limit else dataset.samples:
         t0 = time.perf_counter()
-        result = engine.parse(spec.input_path, cfg)
+        try:
+            result = engine.parse(spec.input_path, cfg)
+        except DocforgeError as exc:
+            # 单样本失败（如扫描页遇未装 OCR）不拖垮整个评测：记错误、指标置空、继续
+            logger.warning("engine %s failed on %s: %s", engine_name, spec.id, exc)
+            per_sample.append(
+                {
+                    "id": spec.id,
+                    "type": spec.doc_type,
+                    "duration_ms": round((time.perf_counter() - t0) * 1000, 1),
+                    "error": f"{type(exc).__name__}: {exc}",
+                    **{k: None for k in METRIC_KEYS},
+                }
+            )
+            continue
         duration_ms = (time.perf_counter() - t0) * 1000
         pred = engine_result_to_submission(spec.id, result)
         errors = validate_submission({"engine": engine_name, "dataset": dataset.name, "samples": [pred]})
@@ -147,6 +169,10 @@ def render_report(results: list[dict[str, Any]], dataset: Dataset) -> str:
     if dataset.synthetic:
         lines.append("> ⚠️ 合成种子集：样本由程序生成、GT 精确已知。数字用于验证评测链路与引擎正确性，**不构成对真实文档的性能主张**。")
         lines.append("")
+    if dataset.annotation:
+        lines.append(f"- 标注方式：{dataset.annotation}")
+    if dataset.notes:
+        lines.append(f"- 说明：{dataset.notes}")
     lines.append(f"- 生成时间：{datetime.now(timezone.utc).isoformat(timespec='seconds')}")
     lines.append(f"- 样本量：{len(dataset.samples)}")
     lines.append(f"- 类型分布：{dict((t, sum(1 for s in dataset.samples if s.doc_type == t)) for t in sorted({s.doc_type for s in dataset.samples}))}")

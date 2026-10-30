@@ -80,3 +80,44 @@ def test_ocr_blocks_skipped():
     pr = page(0, [blk(0, 72, 80, 523, 120, "OCR文本", size=None)])
     detect_headings([pr], HeadingConfig())
     assert pr.blocks[0].type == BlockType.TEXT
+
+
+def test_gov_bold_same_size_headings():
+    """公文标题形态：加粗 + 同字号 + 编号模式（一、/（一）/——）。"""
+    pr = page(
+        0,
+        [
+            blk(0, 72, 80, 523, 100, "一、总体要求", size=10.5) ,  # meta 无 bold -> 不判
+        ],
+    )
+    pr.blocks[0].meta["bold"] = False
+    pr.blocks.append(blk(1, 72, 120, 523, 140, "一、全区经济社会发展的主要预期目标（以市级下达目标为参照执行）", size=10.5))
+    pr.blocks[1].meta["bold"] = True
+    pr.blocks.append(blk(2, 72, 160, 523, 180, "（一）大抓组团融圈，构筑高质量发展新格局", size=10.5))
+    pr.blocks[2].meta["bold"] = True
+    pr.blocks.append(blk(3, 72, 200, 523, 220, "——推动组团建设起势见效", size=10.5))
+    pr.blocks[3].meta["bold"] = True
+    pr.blocks.append(blk(4, 72, 240, 523, 300, "一要千方百计抓好招商引资。继续把招商引资作为头号工程来抓，聚焦现代能源等产业。", size=10.5))
+    pr.blocks[4].meta["bold"] = True  # 加粗但以句号收尾的说明段 -> 不判
+    detect_headings([pr], HeadingConfig())
+    assert pr.blocks[0].type == BlockType.TEXT  # 无 bold 标记
+    assert pr.blocks[1].heading_level == 1
+    assert pr.blocks[2].heading_level == 2
+    assert pr.blocks[3].heading_level == 3
+    assert pr.blocks[4].type == BlockType.TEXT
+
+
+def test_page_number_pattern_removed_single_page():
+    """公文页码（-1- / — 24 —）在放宽带内：单页也剔除。"""
+    pr = page(
+        0,
+        [
+            blk(0, 72, 200, 523, 240, "正文内容"),
+            blk(1, 287, 767, 320, 781, "-1-"),      # 767/842 = 0.91 -> 底部放宽带
+            blk(2, 102, 690, 151, 710, "— 24 —"),   # 690/842 = 0.82 -> 底部放宽带（公文页码常在版心下方）
+        ],
+    )
+    assert remove_headers_footers([pr], LayoutConfig()) == 2
+    assert pr.blocks[0].type == BlockType.TEXT
+    assert pr.blocks[1].type == BlockType.PAGE_FOOTER
+    assert pr.blocks[2].type == BlockType.PAGE_FOOTER
