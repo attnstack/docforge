@@ -1,0 +1,36 @@
+name: "Bug 报告"
+description: "解析结果错误、崩溃或性能问题"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: "问题现象"
+      description: "期望输出 vs 实际输出。表格结构错误请附原 PDF 截图与错误 HTML"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: "复现命令"
+      placeholder: "docforge convert in.pdf -o out.md --format both"
+    validations:
+      required: true
+  - type: textarea
+    id: input_desc
+    attributes:
+      label: "输入文件特征"
+      description: "页数、数字版/扫描件、是否含表格/多栏、来源类型（公文/论文/财报）。**涉及隐私请勿上传原文件，脱敏或裁剪后附图**"
+  - type: textarea
+    id: log
+    attributes:
+      label: "日志"
+      description: "加 --json-logs 运行的输出（异常栈务必完整）"
+      render: shell
+  - type: input
+    id: env
+    attributes:
+      label: "环境"
+      placeholder: "Windows 11 / Python 3.12 / docforge 0.1.0（是否安装 [ocr]）"
+    validations:
+      required: true

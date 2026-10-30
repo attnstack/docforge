@@ -1,0 +1,65 @@
+name: "Benchmark 提交（打榜）"
+description: "提交你的解析引擎在 docforge 数据集上的评测结果"
+labels: ["benchmark"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请确认：
+        1. 结果文件由 `docforge bench --engine <你的引擎>` 或你自己的引擎按 [提交规范](https://github.com/attnstack/docforge/blob/main/docs/benchmark.md) 生成；
+        2. 已通过 `benchmark/schema.py` 的 schema 校验（校验不过的提交不会上榜）；
+        3. 请附上可复现命令与环境说明——不可复现的结果会被要求补充或关闭。
+  - type: input
+    id: engine
+    attributes:
+      label: "引擎名称与版本"
+      description: "如 docforge 0.1.0 / your-engine 1.2.0"
+      placeholder: "engine 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: dataset
+    attributes:
+      label: "数据集版本"
+      options:
+        - docforge-zh-real-v0.1-rc
+        - docforge-zh-synthetic-v0.1
+        - 两者都跑了
+        - 其他（在说明里注明）
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: "指标结果"
+      description: "文本 1−CER / 阅读顺序 / 表格 TEDS / 标题树 / 综合，以及各指标覆盖率"
+      placeholder: |
+        text=0.87 order=0.98 table=0.67 heading=0.81 overall=0.83
+        coverage: text 7/7, table 4/7 ...
+    validations:
+      required: true
+  - type: textarea
+    id: submission
+    attributes:
+      label: "提交文件"
+      description: "附上提交 JSON（或 gist / 仓库链接）。单文件超限时给下载链接"
+  - type: textarea
+    id: repro
+    attributes:
+      label: "复现命令与环境"
+      placeholder: |
+        命令：docforge bench --engine xxx --dataset ...
+        环境：Ubuntu 22.04 / Python 3.11 / CPU，OCR 引擎及版本（如涉及扫描件）
+    validations:
+      required: true
+  - type: checkboxes
+    id: declare
+    attributes:
+      label: "声明"
+      options:
+        - label: "结果由评测工具生成，未手工修改指标数字"
+          required: true
+        - label: "提交 JSON 通过 schema 校验（benchmark/schema.py）"
+          required: true
+        - label: "同一结果未同时以多个 issue 重复提交"
+          required: true
