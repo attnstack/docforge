@@ -48,11 +48,11 @@ Full methodology and reproducible numbers: [docs/benchmark.md](docs/benchmark.md
 
 | Engine | Text 1−CER ↑ | Reading order ↑ | Table TEDS ↑ | Heading tree ↑ | Overall |
 |---|---|---|---|---|---|
-| docforge 0.2.0 | 0.8760 | 0.9762 | 0.6667 | 0.8095 | **0.8321** |
+| docforge 0.2.0 | 0.8760 | 0.9762 | 0.6667 | 0.9524 | **0.8678** |
 | PyMuPDF4LLM | 0.5331 | 1.0000 | 0.2044 | 0.5952 | 0.5832 |
 | markitdown | 0.3576 | 0.9667 | 0.0000 | 0.3333 | 0.4144 |
 
-*Dataset `docforge-zh-real-v0.1-rc`: 7 real Chinese government documents (redistributable under Chinese copyright law art. 5), two independent annotation passes with 1.0000 agreement. Small sample — see the honest limitations below.*
+*Dataset `docforge-zh-real-v0.1-rc`: 7 real Chinese government documents (redistributable under Chinese copyright law art. 5), two independent annotation passes with 1.0000 agreement. Heading gains on the two scanned pages come from v0.2.0 OCR heading detection (the same pages scored 0.333 each on v0.1.0). Small sample — see the honest limitations below.*
 
 On the synthetic seed set, docforge scores 1.0 across the board; PyMuPDF4LLM 0.9017 (ties with us on plain bordered tables, drops to 0.20 on real merged cells); markitdown 0.8021 (0.32 text fidelity on two-column layouts).
 

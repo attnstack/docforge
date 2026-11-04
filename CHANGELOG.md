@@ -12,6 +12,7 @@
   文档标题由晋升规则定级（真实公文集两个扫描页实测正确）
 - 英文版 README（README_EN.md）
 - Dependabot（pip + GitHub Actions 每周检查）、CI 矩阵扩展到 Python 3.12
+- 真实集重测：扫描页标题识别使标题树 0.8095 → 0.9524、综合 0.8321 → 0.8678（基线数字不变）
 
 ### 修复
 - OCR 段落合并重建 Block 时丢失行块 meta（font_size 代理失效导致扫描页标题识别不生效）

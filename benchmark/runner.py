@@ -135,6 +135,20 @@ def run_engine(engine_name: str, dataset: Dataset, cfg: PipelineConfig, limit: i
                 }
             )
             continue
+        except Exception as exc:  # noqa: BLE001 - 引擎的未预期异常同样只淘汰该样本
+            # why 捕获一切：评测器的存活优先于任何一个样本的成败；
+            # 此类条目在报告中可见（error 字段），不会被静默吞掉
+            logger.exception("engine %s crashed on %s", engine_name, spec.id)
+            per_sample.append(
+                {
+                    "id": spec.id,
+                    "type": spec.doc_type,
+                    "duration_ms": round((time.perf_counter() - t0) * 1000, 1),
+                    "error": f"unexpected {type(exc).__name__}: {exc}",
+                    **{k: None for k in METRIC_KEYS},
+                }
+            )
+            continue
         duration_ms = (time.perf_counter() - t0) * 1000
         pred = engine_result_to_submission(spec.id, result)
         errors = validate_submission({"engine": engine_name, "dataset": dataset.name, "samples": [pred]})
