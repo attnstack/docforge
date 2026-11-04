@@ -31,7 +31,7 @@ dependencies = [
 # 扫描件 OCR：PaddleOCR 2.x/3.x 双代 API 适配在 docforge/stages/ocr.py，运行时特性探测。
 # pin <3.0：paddlepaddle 3.x 的 onednn 推理存在上游 bug（实测 PIR 属性转换未实现），
 # 3.x 适配代码保留，待上游修复后放开。
-ocr = ["paddleocr>=2.7,<3.0", "paddlepaddle>=2.6,<3.0"]
+ocr = ["paddleocr>=2.7,<4.0", "paddlepaddle>=2.6,<3.0"]
 # 基线引擎（benchmark 对比用）。markitdown 的 PDF 支持在其 [pdf] extra 里
 bench = ["markitdown[pdf]>=0.1.1", "pymupdf4llm>=0.0.17"]
 server = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
