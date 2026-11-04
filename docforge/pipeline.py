@@ -20,14 +20,50 @@ from docforge.stages.export import merge_continuations  # noqa: F401  (re-export
 logger = logging.getLogger(__name__)
 
 
+def parse_pages_spec(spec: str, total: int) -> list[int]:
+    """解析页范围表达式 "1-3,5"（1-based，闭区间）-> 0-based 页索引列表。越界项报错。"""
+    picked: set[int] = set()
+    for part in spec.replace("，", ",").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            lo_s, hi_s = part.split("-", 1)
+            try:
+                lo, hi = int(lo_s), int(hi_s)
+            except ValueError as exc:
+                raise UnsupportedInputError(f"页范围段 {part!r} 不合法", hint='示例：--pages "1-3,7"') from exc
+            if lo > hi:
+                raise UnsupportedInputError(f"页范围段 {part!r} 起止颠倒")
+        else:
+            try:
+                lo = hi = int(part)
+            except ValueError as exc:
+                raise UnsupportedInputError(f"页号 {part!r} 不合法", hint='示例：--pages "1-3,7"') from exc
+        if lo < 1 or hi > total:
+            raise UnsupportedInputError(f"页范围 {part!r} 超出文档范围（共 {total} 页）")
+        picked.update(range(lo - 1, hi))
+    if not picked:
+        raise UnsupportedInputError("页范围为空", hint='示例：--pages "1-3,7"')
+    return sorted(picked)
+
+
 def parse_document(
     path: str | Path,
     cfg: PipelineConfig,
     *,
     ocr_engine: ocr.BaseOcr | None = None,
     image_out_dir: Path | None = None,
+    password: str | None = None,
+    pages: list[int] | None = None,
+    pages_spec: str | None = None,
 ) -> Document:
-    """解析一个 PDF/图片文件 -> Document。可预期错误抛 DocforgeError 子类。"""
+    """解析一个 PDF/图片文件 -> Document。可预期错误抛 DocforgeError 子类。
+
+    password: 加密 PDF 的口令（None 且文档加密时报错）。
+    pages: 0-based 页索引子集（None = 全部页）；pages_spec: "1-3,7" 表达式（优先于 pages）。
+    阅读顺序计数只含所选页。
+    """
     p = Path(path)
     if not p.exists():
         raise UnsupportedInputError(f"文件不存在: {p}")
@@ -40,7 +76,13 @@ def parse_document(
 
     with fitz.open(p) as doc:
         if doc.needs_pass:
-            raise UnsupportedInputError("PDF 已加密，无法解析", hint="先解密，或让数据提供方输出无密码版本。")
+            if not password:
+                raise UnsupportedInputError(
+                    "PDF 已加密，未提供口令",
+                    hint="用 --password 提供口令，或先解密。",
+                )
+            if not doc.authenticate(password):
+                raise UnsupportedInputError("PDF 口令不正确", hint="确认 --password 输入（区分大小写）。")
         if doc.page_count == 0:
             raise UnsupportedInputError("空文档（0 页）")
         if doc.page_count > cfg.max_pages:
@@ -49,9 +91,15 @@ def parse_document(
                 hint="如确需处理超长文档，调高 DOCFORGE_MAX_PAGES 并自行评估耗时。",
             )
 
-        pages: list[PageResult] = []
+        if pages_spec:
+            page_indices = parse_pages_spec(pages_spec, doc.page_count)
+        elif pages is not None:
+            page_indices = pages
+        else:
+            page_indices = list(range(doc.page_count))
+        page_results: list[PageResult] = []
         t_page = time.perf_counter()
-        for pno in range(doc.page_count):
+        for pno in page_indices:
             page = doc.load_page(pno)
             raw = extract.extract_page(page)
             scanned = layout.is_scanned_page(raw, cfg.layout)
@@ -63,26 +111,26 @@ def parse_document(
                 page_tables = _table_blocks(raw, pno, cfg)
                 blocks = _merge_tables(blocks, page_tables)
                 _extract_images(page, blocks, pno, image_out_dir)
-            pages.append(
+            page_results.append(
                 PageResult(number=pno, width=page.rect.width, height=page.rect.height, blocks=blocks, is_scanned=scanned)
             )
         stage_ms["pages"] = (time.perf_counter() - t_page) * 1000
 
         t_hf = time.perf_counter()
-        removed_hf = layout.remove_headers_footers(pages, cfg.layout)
+        removed_hf = layout.remove_headers_footers(page_results, cfg.layout)
         stage_ms["header_footer"] = (time.perf_counter() - t_hf) * 1000
 
         t_reflow = time.perf_counter()
-        layout.reflow_paragraphs(pages)
+        layout.reflow_paragraphs(page_results)
         stage_ms["reflow"] = (time.perf_counter() - t_reflow) * 1000
 
         t_head = time.perf_counter()
-        layout.detect_headings(pages, cfg.heading)
+        layout.detect_headings(page_results, cfg.heading)
         stage_ms["headings"] = (time.perf_counter() - t_head) * 1000
 
         t_order = time.perf_counter()
         counter = 0
-        for pr in pages:
+        for pr in page_results:
             flow_blocks = [b for b in pr.blocks if b.type not in (BlockType.PAGE_HEADER, BlockType.PAGE_FOOTER)]
             ordered, columns = reading_order.page_reading_order(flow_blocks, pr.width, cfg.layout)
             pr.columns = columns
@@ -91,11 +139,10 @@ def parse_document(
                 counter += 1
         stage_ms["reading_order"] = (time.perf_counter() - t_order) * 1000
 
-        all_blocks = [b for pr in pages for b in pr.blocks]
-        scanned_pages = [pr.number for pr in pages if pr.is_scanned]
-        doc_obj = Document(
-            path=str(p),
-            pages=pages,
+        all_blocks = [b for pr in page_results for b in pr.blocks]
+        scanned_pages = [pr.number for pr in page_results if pr.is_scanned]
+        doc_obj = Document(            path=str(p),
+            pages=page_results,
             blocks=all_blocks,
             stage_ms=stage_ms,
             meta={
@@ -110,7 +157,7 @@ def parse_document(
     logger.info(
         "parsed %s pages=%d blocks=%d scanned=%s total_ms=%.1f",
         p.name,
-        len(pages),
+        len(page_results),
         len(all_blocks),
         scanned_pages or "-",
         stage_ms["total"],
@@ -239,7 +286,9 @@ def _blocks_from_ocr(page: fitz.Page, pno: int, ocr_engine: ocr.BaseOcr | None, 
                 type=BlockType.TEXT,
                 text=ln.text,
                 confidence=ln.confidence,
-                meta={"source": "ocr"},
+                # why 用行框高度做"字号"代理：扫描页没有字体元数据，标题判定需要
+                # 相对大小信号；行高与字号强相关，标题识别因此对扫描页同样可用
+                meta={"source": "ocr", "font_size": bbox.height},
             )
         )
     ordered, _columns = reading_order.page_reading_order(line_blocks, page.rect.width, cfg.layout)

@@ -192,12 +192,21 @@ def detect_headings(pages: list[PageResult], cfg: HeadingConfig) -> None:
             if t[-1] in "。！？；，,.!?;：:":
                 continue
             ratio = size / body
+            is_ocr = b.meta.get("source") == "ocr"
+            # why OCR 行高代理需要补偿 + 收窄判定：检测框紧贴字形，高度差异被压缩
+            # （实测公文标题 1.38x 被压成 1.24x），按固定比例放大后再比阈值；
+            # 但 H3 档（1.12-1.25）与正文行高的噪声区间重叠，误报实测过高，
+            # 因此扫描页只判 H1/H2，H3 层级让位给"文档标题晋升"规则
+            if is_ocr:
+                ratio *= 1.15
+                if len(t) > 30:
+                    continue
             level: int | None = None
             if ratio >= cfg.h1_ratio:
                 level = 1
             elif ratio >= cfg.h2_ratio:
                 level = 2
-            elif ratio >= cfg.h3_ratio:
+            elif ratio >= cfg.h3_ratio and not is_ocr:
                 level = 3
             # 公文附件/附表标签（"附表1""附件2"）：字号常小于正文，但结构上是标题
             if level is None and re.match(r"^附[表件录]\s*\d*$", t) and len(t) <= 10:

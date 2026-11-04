@@ -1,5 +1,7 @@
 # docforge
 
+[English](README_EN.md) | 中文
+
 **中文文档解析引擎与公开 Benchmark：把多栏、复杂表格、扫描件 PDF 转成 LLM-ready 的分层 Markdown 和带 bbox 可溯源的 JSON，并配套一个可复现的中文解析评测基准。**
 
 <p align="center">
@@ -48,10 +50,10 @@ docker run --rm -v "$PWD:/data" docforge convert /data/扫描件.pdf -o /data/ou
 
 | 能力 | 状态 | 说明 |
 |---|---|---|
-| 数字版 PDF → Markdown / JSON | ✅ v0.1 | 文字层直提取，毫秒级；标题层级 + 跨页段落续接 |
+| 数字版 PDF → Markdown / JSON | ✅ v0.2 | 文字层直提取，毫秒级；标题层级 + 跨页段落续接；页范围 `--pages`、加密 `--password`、URL 直输 |
 | 双栏/多栏阅读顺序还原 | ✅ v0.1 | 通栏分段 → x 投影分栏 → 行带聚类，纯几何可单测 |
 | 有框线表格结构还原 | ✅ v0.1 | 线段网格聚类 + union-find 合并，输出 rowspan/colspan HTML |
-| 扫描件 OCR | 🔌 可选 | `docforge[ocr]`（PaddleOCR 2.x/3.x 双代适配），Windows 原生实测：扫描公文页文本 0.9931；扫描页表格结构 v0.2 |
+| 扫描件 OCR | 🔌 可选 | `docforge[ocr]`（PaddleOCR 2.x/3.x 双代适配），Windows 原生实测：扫描公文页文本 0.9931；扫描页标题识别 ✅ v0.2；扫描页表格结构 v0.2+ |
 | 公式 → LaTeX | ⏳ v0.2 | 指标已实现并入库，转换链路未启用（诚实声明，见「不足」） |
 | Benchmark（4 指标 + schema 校验 + 榜单） | ✅ v0.1 | CER / TEDS / 阅读顺序 / 标题树，全部确定性指标，无 LLM judge |
 | 人工标注工作流 | 🚧 进行中 | 预标注 + 双人一致性工具（`docforge annotate` / `docforge bench-agree`） |
@@ -151,7 +153,7 @@ ruff check docforge benchmark
 
 ## Contributing
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。benchmark 提交与榜单规则见 [docs/benchmark.md](docs/benchmark.md)。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。版本历史见 [CHANGELOG.md](CHANGELOG.md)。benchmark 提交与榜单规则见 [docs/benchmark.md](docs/benchmark.md)。
 
 ## License
 

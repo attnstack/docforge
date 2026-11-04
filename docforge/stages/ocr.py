@@ -145,6 +145,8 @@ def lines_to_paragraphs(ordered_lines: list[Any], page_no: int, cfg_dpi_scale: f
 
                 prev.text = smart_join([prev.text, line.text])
                 prev.confidence = (prev.confidence + line.confidence) / 2
+                # 段落的"字号"取组成行的最大行高（标题行通常单行成段）
+                prev.meta["font_size"] = max(prev.meta.get("font_size", 0.0), line.meta.get("font_size", 0.0))
                 continue
         merged.append(
             Block(
@@ -154,7 +156,9 @@ def lines_to_paragraphs(ordered_lines: list[Any], page_no: int, cfg_dpi_scale: f
                 type=BlockType.TEXT,
                 text=line.text,
                 confidence=line.confidence,
-                meta={"source": "ocr"},
+                # why 透传行块 meta：font_size（行高代理）等信号在此处重建 Block 时
+                # 一旦丢失，后续标题判定对扫描页就完全失效
+                meta=dict(line.meta) | {"source": "ocr"},
             )
         )
     return merged

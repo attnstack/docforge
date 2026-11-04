@@ -140,7 +140,16 @@ class _MarkdownEngineBase(BaseEngine):
     def missing_dependency(self) -> str | None:
         return None if module_available(self.module_name) else self.module_name
 
-    def parse(self, path: Path, cfg: PipelineConfig, image_out_dir: Path | None = None) -> EngineResult:
+    def parse(
+        self,
+        path: Path,
+        cfg: PipelineConfig,
+        image_out_dir: Path | None = None,
+        *,
+        password: str | None = None,
+        pages_spec: str | None = None,
+    ) -> EngineResult:
+        del password, pages_spec  # 基线引擎不支持页选择/口令，签名对齐以统一调用
         md = self._to_markdown(path)
         return EngineResult(markdown=md, blocks=markdown_to_blocks(md), meta={"engine": self.name})
 

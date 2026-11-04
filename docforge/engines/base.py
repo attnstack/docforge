@@ -26,7 +26,15 @@ class BaseEngine(ABC):
     supports_scanned: bool = False
 
     @abstractmethod
-    def parse(self, path: Path, cfg: PipelineConfig, image_out_dir: Path | None = None) -> EngineResult: ...
+    def parse(
+        self,
+        path: Path,
+        cfg: PipelineConfig,
+        image_out_dir: Path | None = None,
+        *,
+        password: str | None = None,
+        pages_spec: str | None = None,
+    ) -> EngineResult: ...
 
     def missing_dependency(self) -> str | None:
         """返回缺失的可选依赖名（pip 包名）；None = 就绪。"""

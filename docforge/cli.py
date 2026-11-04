@@ -12,7 +12,7 @@ from pathlib import Path
 
 from docforge import __version__
 from docforge.config import load_config
-from docforge.errors import DocforgeError
+from docforge.errors import DocforgeError, UnsupportedInputError
 
 logger = logging.getLogger("docforge.cli")
 
@@ -25,6 +25,50 @@ def _add_convert_args(sp: argparse.ArgumentParser) -> None:
     sp.add_argument("--batch", action="store_true", help="目录级批处理，失败样本落入 badcases/")
     sp.add_argument("--workers", type=int, default=None, help="批处理并发数（默认 DOCFORGE_MAX_WORKERS）")
     sp.add_argument("--dpi", type=int, default=None, help="扫描页渲染 DPI")
+    sp.add_argument("--pages", default=None, help='页范围，如 "1-3,7"（1-based，闭区间；默认全部页）')
+    sp.add_argument("--password", default=None, help="加密 PDF 的口令")
+
+
+def fetch_url_to_temp(url: str, max_mb: int) -> "Path":
+    """下载 http(s) PDF 到临时文件。why 流式读取 + 大小上限：防止 URL 指向超大文件拖垮内存。"""
+    import tempfile
+    import urllib.request
+
+    if not url.lower().startswith(("http://", "https://")):
+        raise UnsupportedInputError(f"不支持的 URL: {url}")
+    req = urllib.request.Request(url, headers={"User-Agent": "docforge/0.2 (+https://github.com/attnstack/docforge)"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            declared = int(resp.headers.get("Content-Length") or 0)
+            if declared > max_mb * 1_000_000:
+                raise UnsupportedInputError(f"远程文件 {declared / 1_000_000:.0f}MB 超过上限 {max_mb}MB")
+            suffix = Path(url.split("?")[0]).suffix.lower()
+            if suffix not in (".pdf", ".png", ".jpg", ".jpeg"):
+                ctype = (resp.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+                suffix = {"application/pdf": ".pdf", "image/png": ".png", "image/jpeg": ".jpg"}.get(ctype, ".pdf")
+            fd, tmp = tempfile.mkstemp(suffix=suffix)
+            import os
+            os.close(fd)
+            n = 0
+            with open(tmp, "wb") as f:
+                while True:
+                    chunk = resp.read(1_000_000)
+                    if not chunk:
+                        break
+                    n += len(chunk)
+                    if n > max_mb * 1_000_000:
+                        f.close()
+                        Path(tmp).unlink(missing_ok=True)
+                        raise UnsupportedInputError(f"远程文件超过 {max_mb}MB 上限（下载中断止）")
+                    f.write(chunk)
+            if n == 0:
+                Path(tmp).unlink(missing_ok=True)
+                raise UnsupportedInputError("远程文件为空")
+            return Path(tmp)
+    except UnsupportedInputError:
+        raise
+    except Exception as exc:
+        raise UnsupportedInputError(f"下载失败: {exc}", hint="检查 URL 可达性；内网地址不受支持。") from exc
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -124,7 +168,44 @@ def _cmd_convert(args, cfg) -> int:
     if args.batch:
         return _convert_batch(args, cfg, engine)
 
-    result = engine.parse(Path(args.input), cfg, image_out_dir=_image_dir(args.out))
+    # URL 输入：下载到临时文件再走本地流程（--batch 模式只支持目录，不适用）
+    src = Path(args.input)
+    tmp_path: Path | None = None
+    if str(args.input).lower().startswith(("http://", "https://")):
+        tmp_path = fetch_url_to_temp(str(args.input), cfg.max_file_mb)
+        src = tmp_path
+
+    try:
+        pages_spec = args.pages or None
+        result = engine.parse(
+            src, cfg, image_out_dir=_image_dir(args.out), password=args.password or None, pages_spec=pages_spec
+        )
+        out_stem = tmp_path.stem if tmp_path else Path(args.input).stem
+        if args.format in ("md", "both"):
+            out_md = Path(args.out) if args.out else Path(str(args.input)).with_suffix(".md")
+            if tmp_path and not args.out:
+                out_md = Path(f"{out_stem}.md")
+            if args.format == "both" and out_md.suffix == ".json":
+                out_md = out_md.with_suffix(".md")
+            out_md.parent.mkdir(parents=True, exist_ok=True)
+            out_md.write_text(result.markdown or "", encoding="utf-8")
+            print(f"written: {out_md}")
+        if args.format in ("json", "both"):
+            out_json = Path(args.out) if args.out else Path(str(args.input)).with_suffix(".json")
+            if tmp_path and not args.out:
+                out_json = Path(f"{out_stem}.json")
+            if args.format == "both" and out_json.suffix != ".json":
+                out_json = out_json.with_suffix(".json")
+            out_json.parent.mkdir(parents=True, exist_ok=True)
+            out_json.write_text(json.dumps(to_json_dict(result.meta["document"]), ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"written: {out_json}")
+    finally:
+        if tmp_path is not None:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                logger.warning("temp download %s not removed", tmp_path)
+    return 0
     if args.format in ("md", "both"):
         out_md = Path(args.out) if args.out else Path(args.input).with_suffix(".md")
         if args.format == "both" and out_md.suffix == ".json":

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 # PyPI 发行名（docforge 主名已被占用）；导入包名与 CLI 命令仍为 docforge
 name = "docforge-zh"
-version = "0.1.0"
+version = "0.2.0"
 description = "中文文档解析引擎与公开 Benchmark：多栏/复杂表格 PDF -> LLM-ready Markdown 与带 bbox 的 JSON"
 readme = "README.md"
 requires-python = ">=3.11"
