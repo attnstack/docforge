@@ -9,6 +9,7 @@
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-green"></a>
   <img alt="python" src="https://img.shields.io/badge/python-3.11%2B-informational">
   <a href="https://github.com/attnstack/docforge/actions"><img alt="ci" src="https://img.shields.io/badge/CI-GitHub%20Actions-passing-brightgreen"></a>
+  <a href="https://hub.xerj.org/contributors/attnstack"><img alt="XERJ Corpus Hub" src="https://hub.xerj.org/contributors/attnstack/badge.svg"></a>
 </p>
 
 <p align="center">
